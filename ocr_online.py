@@ -16,6 +16,6 @@ def ocr_image(image_path):
         return response.json()
 
 if __name__ == "__main__":
-    image_path = r'C:\Users\luojiatao\Desktop\CRAIC_vision\ocr.bmp'
+    image_path = r'C:\Users\luojiatao\Desktop\CRAIC_vision\ocr.png'
     result = ocr_image(image_path)
     print(result)
