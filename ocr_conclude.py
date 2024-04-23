@@ -1,13 +1,12 @@
 import ocr_online
+from collections import deque
 
 # 常见的OCR错误映射
 corrections = {
-    '7': '1',  # 错误识别为7的应当是1
+    '7': '1'  # 错误识别为7的应当是1
     # 添加更多的错误和正确的映射关系
 }
-
-# 全局变量
-pairs = {}
+pairs={}
 
 # 计算两点之间的欧氏距离
 def distance(p1, p2):
@@ -28,26 +27,35 @@ def main():
 
     # 分离数字和字母
     numbers = [item for item in words_results if item['words'].isdigit()]
-    letters = [item for item in words_results if item['words'].isalpha()]
+    # 将字母和其中心位置作为元组放入队列
+    letter_queue = deque([(item['words'], item['center']) for item in words_results if item['words'].isalpha()])
 
-    # 定义一个距离阈值
-    distance_threshold = 90  # 这个值需要根据实际情况调整
+    # 记录已匹配的数字
+    matched_numbers = set()
 
-    # 为每个数字找到最近的字母，如果都太远则认为没有匹配
-    global pairs
-    pairs.clear()
+
+    # 从队列中依次处理每个字母
+    while letter_queue:
+        letter, letter_center = letter_queue.popleft()
+        closest_number = None
+        min_distance = float('inf')
+
+        for number in numbers:
+            if number['words'] not in matched_numbers:
+                dist = distance(letter_center, number['center'])
+                if dist < min_distance:
+                    min_distance = dist
+                    closest_number = number['words']
+
+        # 匹配最近的数字
+        if closest_number:
+            pairs[letter] = pairs.get(letter, []) + [closest_number]
+            matched_numbers.add(closest_number)
+
+    # 为未匹配的数字分配NONE标识
     for number in numbers:
-        closest_letter = None
-        min_dist = float('inf')
-        for letter in letters:
-            dist = distance(number['center'], letter['center'])
-            if dist < min_dist:
-                min_dist = dist
-                closest_letter = letter['words']
-        if min_dist < distance_threshold and closest_letter:
-            pairs[number['words']] = closest_letter
-        else:
-            pairs[number['words']] = None  # 没有找到接近的字母，或者距离太远
+        if number['words'] not in matched_numbers:
+            pairs.setdefault('NONE', []).append(number['words'])
 
     # 输出结果
     # print(pairs)
